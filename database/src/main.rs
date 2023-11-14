@@ -3,6 +3,11 @@ use dotenv::dotenv;
 use sqlx::{mysql::MySqlPoolOptions, Executor, MySqlConnection, Row};
 //use sqlx::mysql::MySqlPool;
 use std::env;
+mod database;
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -10,15 +15,21 @@ async fn main() {
 
     dotenv().ok();
 
-    println!("{}", env::var("DATABASE_URL").unwrap());
+    println!("{}", &env::var("DATABASE_URL").unwrap());
 
     // let pool = MySqlPool::connect(&env::var("DATABASE_URL").unwrap()).await;
 
+    let pool = database::newDB().await;
+
+   /* 
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
+    */
+
+    print_type_of(&pool);
 
     assert_eq!(
         "mysql://wsl:password@localhost/rust_test",
@@ -27,7 +38,6 @@ async fn main() {
 
     println!("{:?}", pool);
 
-    
     let book = sqlx::query!(
         r#"
             INSERT INTO book ( name )
@@ -39,38 +49,31 @@ async fn main() {
     .await;
 
     let update_book = sqlx::query!(
-            r#"
+        r#"
                 UPDATE book SET name = ? WHERE id = ?
             "#,
-            "TEST_NEW",
-            100
-        )
-        .execute(&pool)
-        .await.unwrap()
-        .rows_affected()
-        ;
+        "TEST_NEW",
+        100
+    )
+    .execute(&pool)
+    .await
+    .unwrap()
+    .rows_affected();
 
-    if (update_book < 0 ){
+    if (update_book < 0) {
         println!("Updated !!");
-    }
-    else {
+    } else {
         println!("invalid id");
     }
-
-
 
     let query = "SELECT * FROM book";
 
     let rows = sqlx::query(query).fetch_all(&pool).await.unwrap();
-    
+
     for row in rows {
         let id: i32 = row.get("id");
         let name: String = row.get("name");
         println!("ID: {}, Name: {}", id, name);
     }
-
-
-    
-
     
 }
