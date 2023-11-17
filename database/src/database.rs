@@ -1,15 +1,14 @@
-//use sqlx::pool::PoolOptions;
-use sqlx::{pool, mysql, mysql::MySqlPoolOptions};                                                    
+use sqlx::{mysql, mysql::MySqlPoolOptions, pool};
 use std::env;
 
-//sqlx_core::pool::Pool<sqlx_mysql::database::MySql>
-
-pub async fn newDB() -> pool::Pool<mysql::MySql> {
+pub async fn new_db() -> Result< pool::Pool<mysql::MySql>, sqlx::Error >  {
     let pool = MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
+        .await;
 
-    pool
+    match pool {
+        Ok(e) => Ok(e),
+        Err(e) => Err(e),
+    }
 }

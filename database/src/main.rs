@@ -1,7 +1,6 @@
 extern crate dotenv;
 use dotenv::dotenv;
-use sqlx::{mysql::MySqlPoolOptions, Executor, MySqlConnection, Row};
-//use sqlx::mysql::MySqlPool;
+use sqlx::{ Row};
 use std::env;
 mod database;
 
@@ -17,26 +16,7 @@ async fn main() {
 
     println!("{}", &env::var("DATABASE_URL").unwrap());
 
-    // let pool = MySqlPool::connect(&env::var("DATABASE_URL").unwrap()).await;
-
-    let pool = database::newDB().await;
-
-   /* 
-    let pool = MySqlPoolOptions::new()
-        .max_connections(5)
-        .connect(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    */
-
-    print_type_of(&pool);
-
-    assert_eq!(
-        "mysql://wsl:password@localhost/rust_test",
-        &env::var("DATABASE_URL").unwrap()
-    );
-
-    println!("{:?}", pool);
+    let pool = database::new_db().await.unwrap();
 
     let book = sqlx::query!(
         r#"
@@ -46,8 +26,10 @@ async fn main() {
         "TEST"
     )
     .execute(&pool)
-    .await;
+    .await
+    ;
 
+    
     let update_book = sqlx::query!(
         r#"
                 UPDATE book SET name = ? WHERE id = ?
@@ -60,7 +42,7 @@ async fn main() {
     .unwrap()
     .rows_affected();
 
-    if (update_book < 0) {
+    if update_book < 0 {
         println!("Updated !!");
     } else {
         println!("invalid id");
@@ -76,4 +58,5 @@ async fn main() {
         println!("ID: {}, Name: {}", id, name);
     }
     
+
 }
