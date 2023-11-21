@@ -1,12 +1,13 @@
 extern crate dotenv;
+mod repository;
+mod entity;
+use entity::Book;
+//use repository::{BookRepository,BookRepositoryImpl};
+use repository::BookRepositoryImpl;
 use dotenv::dotenv;
 use sqlx::{ Row};
 use std::env;
 mod database;
-
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>())
-}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -17,30 +18,19 @@ async fn main() {
     println!("{}", &env::var("DATABASE_URL").unwrap());
 
     let pool = database::new_db().await.unwrap();
+    let book_repo: BookRepositoryImpl = BookRepositoryImpl::new(&pool);
+    println!("{:?}",book_repo);
 
-    let book = sqlx::query!(
-        r#"
-            INSERT INTO book ( name )
-            VALUES ( ? )
-        "#,
-        "TEST"
-    )
-    .execute(&pool)
-    .await
-    ;
+    let book = Book::new("new object");
+    let add_book = book_repo.save(&book).await;
 
-    
-    let update_book = sqlx::query!(
-        r#"
-                UPDATE book SET name = ? WHERE id = ?
-            "#,
-        "TEST_NEW",
-        100
-    )
-    .execute(&pool)
-    .await
-    .unwrap()
-    .rows_affected();
+    if add_book < 0 {
+        println!("Added new book to database");
+    }else {
+        println!("Fail");
+    }
+
+    let update_book = book_repo.update_name("Update object", 1).await;
 
     if update_book < 0 {
         println!("Updated !!");
@@ -48,15 +38,18 @@ async fn main() {
         println!("invalid id");
     }
 
-    let query = "SELECT * FROM book";
-
-    let rows = sqlx::query(query).fetch_all(&pool).await.unwrap();
-
+    let rows = book_repo.find_all().await;
+    //println!("{rows:?}");
+    
     for row in rows {
         let id: i32 = row.get("id");
         let name: String = row.get("name");
         println!("ID: {}, Name: {}", id, name);
     }
+    
+    
+    
+    
     
 
 }

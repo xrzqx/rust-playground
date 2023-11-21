@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 dotenv = "0.15.0"
 sqlx = { version = "0.7", features = [ "mysql", "runtime-tokio" ] }
+sqlx-mysql = "0.7.2"
 tokio = { version = "1.20.0", features = ["rt", "macros"]}
